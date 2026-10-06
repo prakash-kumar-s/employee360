@@ -14,7 +14,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin/leave-types")
-@PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+@PreAuthorize("hasRole('ADMIN')")
 public class LeaveTypeController {
 
     private final LeaveTypeService leaveTypeService;

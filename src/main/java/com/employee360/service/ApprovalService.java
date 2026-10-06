@@ -179,6 +179,7 @@ public class ApprovalService {
 
         leaveRequest.setStatus("REJECTED");
         leaveRequest.setRejectionReason(rejectionReason);
+        leaveRequest.setRejectedByName(approver.getName());
 
         leaveRequestRepository.save(leaveRequest);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -13,7 +13,7 @@ function Administration() {
     const [holidays, setHolidays] = useState([]);
     const [workflowRules, setWorkflowRules] = useState([]);
 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
 
@@ -24,25 +24,52 @@ function Administration() {
     const [holidayForm, setHolidayForm] = useState({ name: "", date: "" });
     const [ruleForm, setRuleForm] = useState({ minDays: 1, maxDays: "", approverRole: "MANAGER", approvalLevel: 1 });
 
-    const isAuthorized = user?.role === "ADMIN" || user?.role === "HR";
+    const isAuthorized = user?.role === "ADMIN";
+    const isAdmin = user?.role === "ADMIN";
+
+    const fetchAllData = useCallback(async () => {
+        const [usersRes, deptsRes, leaveTypesRes, holidaysRes, rulesRes] = await Promise.all([
+                api.get("/admin/users"),
+                api.get("/admin/departments"),
+                api.get("/admin/leave-types"),
+                api.get("/admin/holidays"),
+                isAdmin
+                    ? api.get("/admin/workflow-rules")
+                    : Promise.resolve({ data: [] })
+            ]);
+        return [usersRes, deptsRes, leaveTypesRes, holidaysRes, rulesRes];
+    }, [isAdmin]);
 
     useEffect(() => {
-        if (isAuthorized) {
-            loadAllData();
-        }
-    }, [user]);
+        if (!isAuthorized) return undefined;
+
+        let active = true;
+        fetchAllData()
+            .then(([usersRes, deptsRes, leaveTypesRes, holidaysRes, rulesRes]) => {
+                if (!active) return;
+                setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
+                setDepartments(Array.isArray(deptsRes.data) ? deptsRes.data : []);
+                setLeaveTypes(Array.isArray(leaveTypesRes.data) ? leaveTypesRes.data : []);
+                setHolidays(Array.isArray(holidaysRes.data) ? holidaysRes.data : []);
+                setWorkflowRules(Array.isArray(rulesRes.data) ? rulesRes.data : []);
+            })
+            .catch((err) => {
+                console.error(err);
+                if (active) setError("Failed to load administration data.");
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [isAuthorized, fetchAllData]);
 
     const loadAllData = async () => {
-        setLoading(true);
-        setError("");
         try {
-            const [usersRes, deptsRes, leaveTypesRes, holidaysRes, rulesRes] = await Promise.all([
-                api.get("/admin/users").catch(() => ({ data: [] })),
-                api.get("/admin/departments").catch(() => ({ data: [] })),
-                api.get("/admin/leave-types").catch(() => ({ data: [] })),
-                api.get("/admin/holidays").catch(() => ({ data: [] })),
-                api.get("/admin/workflow-rules").catch(() => ({ data: [] }))
-            ]);
+            const [usersRes, deptsRes, leaveTypesRes, holidaysRes, rulesRes] =
+                await fetchAllData();
             setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
             setDepartments(Array.isArray(deptsRes.data) ? deptsRes.data : []);
             setLeaveTypes(Array.isArray(leaveTypesRes.data) ? leaveTypesRes.data : []);
@@ -51,8 +78,6 @@ function Administration() {
         } catch (err) {
             console.error(err);
             setError("Failed to load administration data.");
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -221,8 +246,12 @@ function Administration() {
         <div>
             <div className="page-heading">
                 <div>
-                    <h2>Administration</h2>
-                    <p>Manage users, departments, leave types, holidays, and workflow rules.</p>
+                    <h2>{isAdmin ? "System Administration" : "HR Management"}</h2>
+                    <p>
+                        {isAdmin
+                            ? "Manage organization settings and leave approval workflow rules."
+                            : "Manage system settings and leave approval workflow rules."}
+                    </p>
                 </div>
             </div>
 
@@ -234,7 +263,9 @@ function Administration() {
                 <button className={activeTab === "departments" ? "primary-button" : "secondary-button"} onClick={() => setActiveTab("departments")}>Departments</button>
                 <button className={activeTab === "leaveTypes" ? "primary-button" : "secondary-button"} onClick={() => setActiveTab("leaveTypes")}>Leave Types</button>
                 <button className={activeTab === "holidays" ? "primary-button" : "secondary-button"} onClick={() => setActiveTab("holidays")}>Holidays</button>
-                <button className={activeTab === "rules" ? "primary-button" : "secondary-button"} onClick={() => setActiveTab("rules")}>Workflow Rules</button>
+                {isAdmin && (
+                    <button className={activeTab === "rules" ? "primary-button" : "secondary-button"} onClick={() => setActiveTab("rules")}>Workflow Rules</button>
+                )}
             </div>
 
             {loading ? (

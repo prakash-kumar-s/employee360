@@ -66,14 +66,6 @@ public class ApprovalController {
         User authenticatedUser =
                 getAuthenticatedUser(authentication);
 
-        LeaveRequest leaveRequest =
-                leaveRequestRepository.findById(requestId)
-                        .orElseThrow(
-                                () -> new IllegalArgumentException(
-                                        "Leave request not found."
-                                )
-                        );
-
         LeaveRequest approvedRequest =
                 approvalService.approveLeave(
                         requestId,
@@ -139,7 +131,8 @@ public class ApprovalController {
 
     @GetMapping("/{requestId}")
     public ResponseEntity<List<ApprovalResponseDto>> getApprovalSteps(
-            @PathVariable Long requestId) {
+            @PathVariable Long requestId,
+            Authentication authentication) {
 
         LeaveRequest leaveRequest =
                 leaveRequestRepository.findById(requestId)
@@ -148,6 +141,20 @@ public class ApprovalController {
                                         "Leave request not found."
                                 )
                         );
+
+        User authenticatedUser = getAuthenticatedUser(authentication);
+        boolean isRequester = leaveRequest.getUser().getId()
+                .equals(authenticatedUser.getId());
+        boolean isAssignedApprover = approvalService
+                .getApprovalSteps(leaveRequest)
+                .stream()
+                .anyMatch(step -> step.getApprover() != null
+                        && step.getApprover().getId()
+                                .equals(authenticatedUser.getId()));
+
+        if (!isRequester && !isAssignedApprover) {
+            return ResponseEntity.status(403).build();
+        }
 
         List<ApprovalResponseDto> response =
                 approvalService.getApprovalSteps(
@@ -225,6 +232,10 @@ public class ApprovalController {
                 request.getRejectionReason()
         );
 
+        dto.setRejectedByName(
+                request.getRejectedByName()
+        );
+
         dto.setRequestStatus(
                 request.getStatus()
         );
@@ -239,6 +250,12 @@ public class ApprovalController {
 
         dto.setApproverRole(
                 step.getApproverRole()
+        );
+
+        dto.setApproverName(
+                step.getApprover() == null
+                        ? null
+                        : step.getApprover().getName()
         );
 
         dto.setApprovalStatus(

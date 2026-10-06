@@ -14,7 +14,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin/departments")
-@PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+@PreAuthorize("hasRole('ADMIN')")
 public class DepartmentController {
 
     private final DepartmentService departmentService;

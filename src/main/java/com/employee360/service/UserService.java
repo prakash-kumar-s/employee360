@@ -1,9 +1,12 @@
 package com.employee360.service;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.employee360.dto.UserRequestDto;
 import com.employee360.dto.UserResponseDto;
@@ -15,18 +18,28 @@ import com.employee360.repository.UserRepository;
 @Service
 public class UserService {
 
+    private static final Set<String> VALID_ROLES = Set.of(
+            "ADMIN",
+            "HR",
+            "MANAGER",
+            "DEPARTMENT_HEAD",
+            "EMPLOYEE");
+
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LeaveBalanceService leaveBalanceService;
 
     public UserService(
             UserRepository userRepository,
             DepartmentRepository departmentRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            LeaveBalanceService leaveBalanceService) {
 
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
         this.passwordEncoder = passwordEncoder;
+        this.leaveBalanceService = leaveBalanceService;
     }
 
     public List<UserResponseDto> getAllUsers() {
@@ -37,9 +50,13 @@ public class UserService {
                 .toList();
     }
 
+    @Transactional
     public UserResponseDto createUser(UserRequestDto dto) {
 
-        if (userRepository.findByUsername(dto.getUsername()) != null) {
+        String username = normalizeUsername(dto.getUsername());
+        String role = normalizeRole(dto.getRole());
+
+        if (userRepository.findByUsername(username) != null) {
             throw new RuntimeException("Username already exists.");
         }
 
@@ -58,14 +75,15 @@ public class UserService {
 
         User user = new User();
 
-        user.setName(dto.getName());
-        user.setUsername(dto.getUsername());
+        user.setName(dto.getName().trim());
+        user.setUsername(username);
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setRole(dto.getRole());
+        user.setRole(role);
         user.setDepartment(department);
         user.setManager(manager);
 
         User savedUser = userRepository.save(user);
+        leaveBalanceService.initializeForUser(savedUser);
 
         return toResponse(savedUser);
     }
@@ -92,9 +110,17 @@ public class UserService {
                 .orElseThrow(() ->
                         new RuntimeException("Department not found."));
 
-        user.setName(dto.getName());
-        user.setUsername(dto.getUsername());
-        user.setRole(dto.getRole());
+        String username = normalizeUsername(dto.getUsername());
+        String role = normalizeRole(dto.getRole());
+
+        if (!user.getUsername().equals(username)
+                && userRepository.findByUsername(username) != null) {
+            throw new RuntimeException("Username already exists.");
+        }
+
+        user.setName(dto.getName().trim());
+        user.setUsername(username);
+        user.setRole(role);
         user.setDepartment(department);
 
         if (dto.getPassword() != null
@@ -129,6 +155,33 @@ public class UserService {
                         new RuntimeException("User not found."));
 
         userRepository.delete(user);
+    }
+
+    private String normalizeUsername(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            throw new RuntimeException("Username is required.");
+        }
+
+        return username.trim();
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null || role.trim().isEmpty()) {
+            throw new RuntimeException("Role is required.");
+        }
+
+        String normalized = role
+                .trim()
+                .replace('-', '_')
+                .replace(' ', '_')
+                .toUpperCase(Locale.ROOT);
+
+        if (!VALID_ROLES.contains(normalized)) {
+            throw new RuntimeException(
+                    "Unsupported role. Allowed roles: ADMIN, HR, MANAGER, DEPARTMENT_HEAD, EMPLOYEE.");
+        }
+
+        return normalized;
     }
 
     private UserResponseDto toResponse(User user) {

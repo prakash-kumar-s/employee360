@@ -23,14 +23,10 @@ function Dashboard() {
     const [rejectionReason, setRejectionReason] = useState("");
 
 
-    const isEmployee =
-        user?.role === "EMPLOYEE";
-
     const isApprover =
         user?.role === "MANAGER" ||
         user?.role === "DEPARTMENT_HEAD" ||
-        user?.role === "HR" ||
-        user?.role === "ADMIN";
+        user?.role === "HR";
 
 
     /*
@@ -78,13 +74,6 @@ function Dashboard() {
     useEffect(() => {
 
         if (!user?.id) {
-
-            setLoading(false);
-
-            setError(
-                "User information is missing. Please logout and login again."
-            );
-
             return;
         }
 
@@ -99,7 +88,7 @@ function Dashboard() {
              * EMPLOYEE
              */
 
-            if (isEmployee) {
+            if (user?.role === "EMPLOYEE") {
 
                 try {
 
@@ -285,7 +274,7 @@ function Dashboard() {
 
         loadDashboard();
 
-    }, [user, isEmployee, isApprover]);
+    }, [user, isApprover]);
 
 
     /*
@@ -495,7 +484,7 @@ function Dashboard() {
      * EMPLOYEE DASHBOARD
      */
 
-    if (isEmployee) {
+    if (user?.role === "EMPLOYEE") {
 
         return (
             <div className="page-container">
@@ -725,6 +714,10 @@ function Dashboard() {
                                             Status
                                         </th>
 
+                                        <th>
+                                            Rejection Details
+                                        </th>
+
                                     </tr>
 
                                 </thead>
@@ -779,6 +772,15 @@ function Dashboard() {
                                                             }
                                                         </span>
 
+                                                    </td>
+
+                                                    <td>
+                                                        {leave.status === "REJECTED" ? (
+                                                            <>
+                                                                <div>Rejected by: {leave.rejectedByName || "Unknown"}</div>
+                                                                <div>Reason: {leave.rejectionReason || "No reason provided."}</div>
+                                                            </>
+                                                        ) : "-"}
                                                     </td>
 
                                                 </tr>

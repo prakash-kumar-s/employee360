@@ -14,7 +14,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin/holidays")
-@PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+@PreAuthorize("hasRole('ADMIN')")
 public class HolidayController {
 
     private final HolidayService holidayService;

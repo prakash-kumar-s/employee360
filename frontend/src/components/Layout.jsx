@@ -25,11 +25,13 @@ function Layout() {
 
                 <nav>
 
-                    <NavLink to="/dashboard">
-                        Dashboard
-                    </NavLink>
+                    {role !== "ADMIN" && (
+                        <NavLink to="/dashboard">
+                            Dashboard
+                        </NavLink>
+                    )}
 
-                    {role === "EMPLOYEE" && (
+                    {user && role !== "ADMIN" && role !== "HR" && (
                         <>
                             <NavLink to="/apply-leave">
                                 Apply Leave
@@ -44,25 +46,28 @@ function Layout() {
                     {(
                         role === "MANAGER" ||
                         role === "DEPARTMENT_HEAD" ||
-                        role === "HR" ||
-                        role === "ADMIN"
+                        role === "HR"
                     ) && (
                         <NavLink to="/approvals">
                             Approvals
                         </NavLink>
                     )}
 
-                    <NavLink to="/notifications">
-                        Notifications
-                    </NavLink>
+                    {role !== "ADMIN" && (
+                        <>
+                            <NavLink to="/notifications">
+                                Notifications
+                            </NavLink>
 
-                    <NavLink to="/audit">
-                        Audit Log
-                    </NavLink>
+                            <NavLink to="/audit">
+                                Audit Log
+                            </NavLink>
+                        </>
+                    )}
 
-                    {(role === "ADMIN" || role === "HR") && (
+                    {role === "ADMIN" && (
                         <NavLink to="/admin">
-                            Administration
+                            System Administration
                         </NavLink>
                     )}
 

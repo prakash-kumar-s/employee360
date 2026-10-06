@@ -23,6 +23,10 @@ function AuditLog() {
     const [error, setError] =
         useState("");
 
+    const selectedLeave = leaves.find(
+        (leave) => String(leave.id) === selectedRequest
+    );
+
     useEffect(() => {
 
         const loadLeaves = async () => {
@@ -165,6 +169,19 @@ function AuditLog() {
                             Audit History
                         </h3>
                     </div>
+
+                    {selectedLeave?.status === "REJECTED" && (
+                        <div className="error-message">
+                            <strong>
+                                Rejected by:{" "}
+                                {selectedLeave.rejectedByName || "Unknown"}
+                            </strong>
+                            <p>
+                                Reason:{" "}
+                                {selectedLeave.rejectionReason || "No reason provided."}
+                            </p>
+                        </div>
+                    )}
 
                     {loadingAudit ? (
                         <p>

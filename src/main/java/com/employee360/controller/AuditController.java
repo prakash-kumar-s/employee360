@@ -10,6 +10,7 @@ import com.employee360.dto.AuditResponseDto;
 import com.employee360.dto.LeaveResponseDto;
 import com.employee360.entity.LeaveRequest;
 import com.employee360.entity.User;
+import com.employee360.repository.ApprovalStepRepository;
 import com.employee360.repository.LeaveRequestRepository;
 import com.employee360.repository.UserRepository;
 import com.employee360.service.AuditService;
@@ -21,11 +22,13 @@ public class AuditController {
     private final AuditService auditService;
     private final LeaveRequestRepository leaveRequestRepository;
     private final UserRepository userRepository;
+    private final ApprovalStepRepository approvalStepRepository;
 
     public AuditController(
             AuditService auditService,
             LeaveRequestRepository leaveRequestRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ApprovalStepRepository approvalStepRepository) {
 
         this.auditService =
                 auditService;
@@ -35,6 +38,8 @@ public class AuditController {
 
         this.userRepository =
                 userRepository;
+        this.approvalStepRepository =
+                approvalStepRepository;
     }
 
     @GetMapping("/requests")
@@ -143,7 +148,25 @@ public class AuditController {
         dto.setEndDate(request.getEndDate());
         dto.setReason(request.getReason());
         dto.setRejectionReason(request.getRejectionReason());
+        dto.setRejectedByName(getRejectedByName(request));
         dto.setStatus(request.getStatus());
         return dto;
+    }
+
+    private String getRejectedByName(LeaveRequest request) {
+        if (request.getRejectedByName() != null) {
+            return request.getRejectedByName();
+        }
+
+        return approvalStepRepository
+                .findByLeaveRequestOrderByStepOrder(request)
+                .stream()
+                .filter(step -> "REJECTED".equals(step.getStatus()))
+                .map(step -> step.getApprover() == null
+                        ? null
+                        : step.getApprover().getName())
+                .filter(name -> name != null)
+                .findFirst()
+                .orElse(null);
     }
 }

@@ -10,6 +10,18 @@ function ApprovalDetails() {
     const [steps, setSteps] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const pendingSteps = steps.filter(
+        (step) => step.approvalStatus === "PENDING"
+    );
+    const requestStatus = steps[0]?.requestStatus;
+    const rejectedSteps = steps.filter(
+        (step) => step.approvalStatus === "REJECTED"
+    );
+    const visibleSteps = pendingSteps.length > 0
+        ? pendingSteps
+        : requestStatus === "REJECTED"
+            ? rejectedSteps
+            : [];
 
     useEffect(() => {
 
@@ -47,7 +59,7 @@ function ApprovalDetails() {
             <div className="page-heading">
                 <div>
                     <h2>
-                        Approval Timeline
+                        Current Approval
                     </h2>
 
                     <p>
@@ -68,17 +80,17 @@ function ApprovalDetails() {
                     </div>
                 )}
 
-                {!loading &&
-                    !error &&
-                    steps.length === 0 && (
-                        <p className="empty">
-                            No approval steps found.
-                        </p>
-                    )}
+                {!loading && !error && visibleSteps.length === 0 && (
+                    <p className="empty">
+                        {requestStatus
+                            ? `No approval is currently pending. Request status: ${requestStatus}.`
+                            : "No approval is currently pending."}
+                    </p>
+                )}
 
                 <div className="timeline">
 
-                    {steps.map((step) => (
+                    {visibleSteps.map((step) => (
 
                         <div
                             className="timeline-item"
@@ -112,10 +124,17 @@ function ApprovalDetails() {
                                     {step.approvalStatus}
                                 </span>
 
-                                {step.rejectionReason && (
+                                {step.approvalStatus === "REJECTED" && (
+                                    <p>
+                                        Rejected by:{" "}
+                                        {step.rejectedByName || step.approverName || step.approverRole}
+                                    </p>
+                                )}
+
+                                {step.approvalStatus === "REJECTED" && (
                                     <p>
                                         Rejection reason:{" "}
-                                        {step.rejectionReason}
+                                        {step.rejectionReason || "No reason provided."}
                                     </p>
                                 )}
 

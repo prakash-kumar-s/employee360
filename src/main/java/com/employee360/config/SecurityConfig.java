@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -116,30 +117,38 @@ public class SecurityConfig {
                 ).permitAll()
 
                 .requestMatchers(
+                    "/api/admin/workflow-rules/**"
+                ).hasRole("ADMIN")
+
+                .requestMatchers(
                     "/api/admin/**"
-                ).hasAnyRole(
-                    "ADMIN",
-                    "HR"
-                )
+                ).hasRole("ADMIN")
 
                 .requestMatchers(
                     "/api/leaves/**"
                 ).hasAnyRole(
                     "EMPLOYEE",
                     "MANAGER",
-                    "DEPARTMENT_HEAD",
-                    "HR",
-                    "ADMIN"
+                    "DEPARTMENT_HEAD"
                 )
 
                 .requestMatchers(
+                    HttpMethod.GET,
                     "/api/approvals/**"
                 ).hasAnyRole(
                     "EMPLOYEE",
                     "MANAGER",
                     "DEPARTMENT_HEAD",
-                    "HR",
-                    "ADMIN"
+                    "HR"
+                )
+
+                .requestMatchers(
+                    HttpMethod.POST,
+                    "/api/approvals/**"
+                ).hasAnyRole(
+                    "MANAGER",
+                    "DEPARTMENT_HEAD",
+                    "HR"
                 )
 
                 .requestMatchers(

@@ -1,7 +1,9 @@
 package com.employee360.engine;
 
 import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
@@ -37,6 +39,7 @@ public class ApprovalEngine {
         List<WorkflowRule> matchingRules = workflowRuleRepository
                 .findAll()
                 .stream()
+                .filter(rule -> !"ADMIN".equalsIgnoreCase(rule.getApproverRole()))
                 .filter(rule -> workingDays >= rule.getMinDays())
                 .filter(rule ->
                         rule.getMaxDays() == null
@@ -91,48 +94,56 @@ public class ApprovalEngine {
             User employee,
             String approverRole) {
 
-        if ("MANAGER".equalsIgnoreCase(approverRole)) {
+        List<User> candidates = new ArrayList<>();
 
-            return employee.getManager();
+        if ("MANAGER".equalsIgnoreCase(approverRole)) {
+            addCandidate(candidates, employee.getManager());
+            addDepartmentCandidates(candidates, employee, "MANAGER");
+            addDepartmentCandidates(candidates, employee, "DEPARTMENT_HEAD");
+            candidates.addAll(userRepository.findByRole("MANAGER"));
+            candidates.addAll(userRepository.findByRole("HR"));
+            return firstOtherUser(employee, candidates);
         }
 
         if ("DEPARTMENT_HEAD".equalsIgnoreCase(approverRole)) {
-
-            if (employee.getDepartment() == null) {
-                return null;
-            }
-
-            List<User> departmentHeads =
-                    userRepository.findByDepartmentAndRole(
-                            employee.getDepartment(),
-                            "DEPARTMENT_HEAD");
-
-            if (departmentHeads.isEmpty()) {
-                return null;
-            }
-
-            return departmentHeads.get(0);
+            addDepartmentCandidates(candidates, employee, "DEPARTMENT_HEAD");
+            addDepartmentCandidates(candidates, employee, "MANAGER");
+            addCandidate(candidates, employee.getManager());
+            candidates.addAll(userRepository.findByRole("HR"));
+            return firstOtherUser(employee, candidates);
         }
 
         if ("HR".equalsIgnoreCase(approverRole)) {
-
-            List<User> hrUsers =
-                    userRepository.findByRole("HR");
-
-            if (hrUsers.isEmpty()) {
-                return null;
-            }
-
-            return hrUsers.get(0);
+            candidates.addAll(userRepository.findByRole("HR"));
+            addDepartmentCandidates(candidates, employee, "DEPARTMENT_HEAD");
+            addCandidate(candidates, employee.getManager());
+            return firstOtherUser(employee, candidates);
         }
 
-        List<User> users =
-                userRepository.findByRole(approverRole);
+        return firstOtherUser(employee, userRepository.findByRole(approverRole));
+    }
 
-        if (users.isEmpty()) {
-            return null;
+    private void addDepartmentCandidates(
+            List<User> candidates,
+            User employee,
+            String role) {
+
+        if (employee.getDepartment() != null) {
+            candidates.addAll(
+                    userRepository.findByDepartmentAndRole(employee.getDepartment(), role));
         }
+    }
 
-        return users.get(0);
+    private void addCandidate(List<User> candidates, User candidate) {
+        if (candidate != null) {
+            candidates.add(candidate);
+        }
+    }
+
+    private User firstOtherUser(User employee, List<User> candidates) {
+        return candidates.stream()
+                .filter(candidate -> !Objects.equals(candidate.getId(), employee.getId()))
+                .findFirst()
+                .orElse(null);
     }
 }

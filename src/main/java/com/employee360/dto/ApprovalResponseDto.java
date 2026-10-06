@@ -17,11 +17,13 @@ public class ApprovalResponseDto {
 
     private String reason;
     private String rejectionReason;
+    private String rejectedByName;
     private String requestStatus;
 
     private Long approvalStepId;
     private Integer stepOrder;
     private String approverRole;
+    private String approverName;
     private String approvalStatus;
 
     public Long getRequestId() {
@@ -96,6 +98,14 @@ public class ApprovalResponseDto {
         this.rejectionReason = rejectionReason;
     }
 
+    public String getRejectedByName() {
+        return rejectedByName;
+    }
+
+    public void setRejectedByName(String rejectedByName) {
+        this.rejectedByName = rejectedByName;
+    }
+
     public String getRequestStatus() {
         return requestStatus;
     }
@@ -124,8 +134,16 @@ public class ApprovalResponseDto {
         return approverRole;
     }
 
+    public String getApproverName() {
+        return approverName;
+    }
+
     public void setApproverRole(String approverRole) {
         this.approverRole = approverRole;
+    }
+
+    public void setApproverName(String approverName) {
+        this.approverName = approverName;
     }
 
     public String getApprovalStatus() {

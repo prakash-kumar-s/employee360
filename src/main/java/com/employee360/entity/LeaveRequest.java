@@ -23,6 +23,8 @@ public class LeaveRequest {
 
     private String rejectionReason;
 
+    private String rejectedByName;
+
     private String status;
 
     @ManyToOne
@@ -65,6 +67,14 @@ public class LeaveRequest {
 
     public void setRejectionReason(String rejectionReason) {
         this.rejectionReason = rejectionReason;
+    }
+
+    public String getRejectedByName() {
+        return rejectedByName;
+    }
+
+    public void setRejectedByName(String rejectedByName) {
+        this.rejectedByName = rejectedByName;
     }
 
     public String getStatus() {

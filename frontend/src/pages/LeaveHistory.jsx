@@ -98,6 +98,7 @@ function LeaveHistory() {
                                         <th>End Date</th>
                                         <th>Reason</th>
                                         <th>Status</th>
+                                        <th>Rejection details</th>
                                         <th>Details</th>
                                     </tr>
                                 </thead>
@@ -133,6 +134,15 @@ function LeaveHistory() {
                                                 >
                                                     {leave.status}
                                                 </span>
+                                            </td>
+
+                                            <td>
+                                                {leave.status === "REJECTED" ? (
+                                                    <>
+                                                        <div>Rejected by: {leave.rejectedByName || "Unknown"}</div>
+                                                        <div>Reason: {leave.rejectionReason || "No reason provided."}</div>
+                                                    </>
+                                                ) : "-"}
                                             </td>
 
                                             <td>

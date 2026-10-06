@@ -44,42 +44,74 @@ function App() {
 
                         <Route
                             path="/dashboard"
-                            element={<Dashboard />}
+                            element={
+                                <ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER", "DEPARTMENT_HEAD", "HR"]}>
+                                    <Dashboard />
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/apply-leave"
-                            element={<ApplyLeave />}
+                            element={
+                                <ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER", "DEPARTMENT_HEAD"]}>
+                                    <ApplyLeave />
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/leave-history"
-                            element={<LeaveHistory />}
+                            element={
+                                <ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER", "DEPARTMENT_HEAD"]}>
+                                    <LeaveHistory />
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/approvals"
-                            element={<Approvals />}
+                            element={
+                                <ProtectedRoute allowedRoles={["MANAGER", "DEPARTMENT_HEAD", "HR"]}>
+                                    <Approvals />
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/approvals/:requestId"
-                            element={<ApprovalDetails />}
+                            element={
+                                <ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER", "DEPARTMENT_HEAD", "HR"]}>
+                                    <ApprovalDetails />
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/notifications"
-                            element={<Notifications />}
+                            element={
+                                <ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER", "DEPARTMENT_HEAD", "HR"]}>
+                                    <Notifications />
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/audit"
-                            element={<AuditLog />}
+                            element={
+                                <ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER", "DEPARTMENT_HEAD", "HR"]}>
+                                    <AuditLog />
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/admin"
-                            element={<Administration />}
+                            element={
+                                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                                    <Administration />
+                                </ProtectedRoute>
+                            }
                         />
 
                     </Route>

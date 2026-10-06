@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -19,42 +19,40 @@ function Approvals() {
     const [rejectionReason, setRejectionReason] =
         useState("");
 
-    const loadApprovals = async () => {
+    const fetchApprovals = useCallback(() => {
+        return api.get(`/approvals/manager/${user.id}`);
+    }, [user]);
 
-        if (!user?.id) {
-            setLoading(false);
-            return;
-        }
-
+    const loadApprovals = useCallback(async () => {
         try {
-
-            setLoading(true);
-
-            const response =
-                await api.get(
-                    `/approvals/manager/${user.id}`
-                );
-
+            const response = await fetchApprovals();
             setApprovals(response.data);
-
         } catch (error) {
-
             console.error(error);
-
-            setError(
-                "Unable to load pending approvals."
-            );
-
-        } finally {
-            setLoading(false);
+            setError("Unable to load pending approvals.");
         }
-    };
+    }, [fetchApprovals]);
 
     useEffect(() => {
+        if (!user?.id) return undefined;
 
-        loadApprovals();
+        let active = true;
+        fetchApprovals()
+            .then((response) => {
+                if (active) setApprovals(response.data);
+            })
+            .catch((error) => {
+                console.error(error);
+                if (active) setError("Unable to load pending approvals.");
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
 
-    }, [user]);
+        return () => {
+            active = false;
+        };
+    }, [fetchApprovals, user?.id]);
 
     const handleApprove = async (requestId) => {
 

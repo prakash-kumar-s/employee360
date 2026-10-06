@@ -13,6 +13,7 @@ import com.employee360.dto.LeaveTypeResponseDto;
 import com.employee360.entity.LeaveRequest;
 import com.employee360.entity.LeaveType;
 import com.employee360.entity.User;
+import com.employee360.repository.ApprovalStepRepository;
 import com.employee360.repository.LeaveTypeRepository;
 import com.employee360.repository.UserRepository;
 import com.employee360.service.LeaveService;
@@ -24,15 +25,18 @@ public class LeaveController {
     private final LeaveService leaveService;
     private final UserRepository userRepository;
     private final LeaveTypeRepository leaveTypeRepository;
+    private final ApprovalStepRepository approvalStepRepository;
 
     public LeaveController(
             LeaveService leaveService,
             UserRepository userRepository,
-            LeaveTypeRepository leaveTypeRepository) {
+            LeaveTypeRepository leaveTypeRepository,
+            ApprovalStepRepository approvalStepRepository) {
 
         this.leaveService = leaveService;
         this.userRepository = userRepository;
         this.leaveTypeRepository = leaveTypeRepository;
+        this.approvalStepRepository = approvalStepRepository;
     }
 
     @PostMapping
@@ -208,11 +212,32 @@ public class LeaveController {
                 request.getRejectionReason()
         );
 
+        dto.setRejectedByName(
+                getRejectedByName(request)
+        );
+
         dto.setStatus(
                 request.getStatus()
         );
 
         return dto;
+    }
+
+    private String getRejectedByName(LeaveRequest request) {
+        if (request.getRejectedByName() != null) {
+            return request.getRejectedByName();
+        }
+
+        return approvalStepRepository
+                .findByLeaveRequestOrderByStepOrder(request)
+                .stream()
+                .filter(step -> "REJECTED".equals(step.getStatus()))
+                .map(step -> step.getApprover() == null
+                        ? null
+                        : step.getApprover().getName())
+                .filter(name -> name != null)
+                .findFirst()
+                .orElse(null);
     }
 
     private LeaveTypeResponseDto toLeaveTypeResponseDto(

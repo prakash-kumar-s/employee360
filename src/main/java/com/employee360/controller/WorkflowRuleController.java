@@ -14,7 +14,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin/workflow-rules")
-@PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+@PreAuthorize("hasRole('ADMIN')")
 public class WorkflowRuleController {
 
     private final WorkflowRuleService workflowRuleService;

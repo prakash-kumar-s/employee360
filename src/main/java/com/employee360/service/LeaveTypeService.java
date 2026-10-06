@@ -3,6 +3,7 @@ package com.employee360.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.employee360.entity.LeaveType;
 import com.employee360.repository.LeaveTypeRepository;
@@ -11,12 +12,15 @@ import com.employee360.repository.LeaveTypeRepository;
 public class LeaveTypeService {
 
     private final LeaveTypeRepository leaveTypeRepository;
+    private final LeaveBalanceService leaveBalanceService;
 
     public LeaveTypeService(
-            LeaveTypeRepository leaveTypeRepository) {
+            LeaveTypeRepository leaveTypeRepository,
+            LeaveBalanceService leaveBalanceService) {
 
         this.leaveTypeRepository =
                 leaveTypeRepository;
+        this.leaveBalanceService = leaveBalanceService;
     }
 
     public List<LeaveType> getAllLeaveTypes() {
@@ -34,6 +38,7 @@ public class LeaveTypeService {
                 );
     }
 
+    @Transactional
     public LeaveType createLeaveType(
             String name,
             int entitlement,
@@ -61,11 +66,15 @@ public class LeaveTypeService {
                 maxConsecutiveLeave
         );
 
-        return leaveTypeRepository.save(
+        LeaveType savedLeaveType = leaveTypeRepository.save(
                 leaveType
         );
+
+        leaveBalanceService.initializeForLeaveType(savedLeaveType);
+        return savedLeaveType;
     }
 
+    @Transactional
     public LeaveType updateLeaveType(
             Long id,
             String name,
@@ -98,9 +107,9 @@ public class LeaveTypeService {
                 maxConsecutiveLeave
         );
 
-        return leaveTypeRepository.save(
-                leaveType
-        );
+        LeaveType savedLeaveType = leaveTypeRepository.save(leaveType);
+        leaveBalanceService.updateEntitlement(savedLeaveType);
+        return savedLeaveType;
     }
 
     public void deleteLeaveType(Long id) {

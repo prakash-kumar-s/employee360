@@ -1,6 +1,8 @@
 package com.employee360.service;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
@@ -9,6 +11,11 @@ import com.employee360.repository.WorkflowRuleRepository;
 
 @Service
 public class WorkflowRuleService {
+
+    private static final Set<String> APPROVER_ROLES = Set.of(
+            "MANAGER",
+            "DEPARTMENT_HEAD",
+            "HR");
 
     private final WorkflowRuleRepository workflowRuleRepository;
 
@@ -53,9 +60,7 @@ public class WorkflowRuleService {
 
         rule.setMinDays(minDays);
         rule.setMaxDays(maxDays);
-        rule.setApproverRole(
-                approverRole.trim().toUpperCase()
-        );
+        rule.setApproverRole(normalizeApproverRole(approverRole));
         rule.setApprovalLevel(approvalLevel);
 
         return workflowRuleRepository.save(rule);
@@ -80,9 +85,7 @@ public class WorkflowRuleService {
 
         rule.setMinDays(minDays);
         rule.setMaxDays(maxDays);
-        rule.setApproverRole(
-                approverRole.trim().toUpperCase()
-        );
+        rule.setApproverRole(normalizeApproverRole(approverRole));
         rule.setApprovalLevel(approvalLevel);
 
         return workflowRuleRepository.save(rule);
@@ -125,11 +128,22 @@ public class WorkflowRuleService {
             );
         }
 
+        if (!APPROVER_ROLES.contains(
+                approverRole.trim().toUpperCase(Locale.ROOT))) {
+            throw new IllegalArgumentException(
+                    "Approver role must be MANAGER, DEPARTMENT_HEAD, or HR.");
+        }
+
         if (approvalLevel < 1) {
 
             throw new IllegalArgumentException(
                     "Approval level must be at least 1."
             );
         }
+
+    }
+
+    private String normalizeApproverRole(String approverRole) {
+        return approverRole.trim().toUpperCase(Locale.ROOT);
     }
 }
